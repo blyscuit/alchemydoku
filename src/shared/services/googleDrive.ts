@@ -319,6 +319,7 @@ function mergeSettings(a: Settings | undefined, b: Settings | undefined): Settin
     showPuzzleOnly:    a.showPuzzleOnly    || b.showPuzzleOnly,    // true = enabled wins
     penColor:          a.penColor ?? b.penColor,                   // keep whichever is set
     showTimer:         a.showTimer         || b.showTimer,         // true = enabled wins
+    littleAlchemy:     !!(a.littleAlchemy  || b.littleAlchemy),        // true = enabled wins
   };
 }
 

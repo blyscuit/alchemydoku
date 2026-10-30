@@ -443,13 +443,26 @@ function AppInner() {
   // ── Tutorial ───────────────────────────────────────────────────────────────
   if (view.kind === 'tutorial') {
     return (
-      <TutorialPage
-        tutorialId={view.tutorialId}
-        steps={TUTORIAL_STEPS[view.tutorialId]}
-        onBack={() => setView({ kind: 'home' })}
-        onDone={() => setView({ kind: 'home' })}
-        onPuzzleDone={markDone}
-      />
+      <>
+        <TutorialPage
+          tutorialId={view.tutorialId}
+          steps={TUTORIAL_STEPS[view.tutorialId]}
+          onBack={() => setView({ kind: 'home' })}
+          onDone={() => setView({ kind: 'home' })}
+          onPuzzleDone={markDone}
+          onOpenSettings={() => setSettingsOpen(true)}
+        />
+        {settingsOpen && (
+          <SettingsModal
+            settings={settings}
+            onSettingsChange={handleSettingsChange}
+            onResetBase={handleResetBase}
+            onResetExpanded={handleResetExpanded}
+            onResetAll={handleResetAll}
+            onClose={() => setSettingsOpen(false)}
+          />
+        )}
+      </>
     );
   }
 

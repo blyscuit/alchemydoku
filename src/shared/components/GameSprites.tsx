@@ -1,4 +1,5 @@
 import type React from 'react';
+import { useLittleAlchemy } from '@shared/utils/useLittleAlchemy';
 import { AtlasSprite } from '@shared/components/AtlasSprite';
 import {
   INGREDIENT_SPRITES,
@@ -58,6 +59,17 @@ export function ElemImage({ color, size = 'L', width = 36 }: { color: Color; siz
 
 /** Orb + white ＋/－ overlay, exactly like the rulebook sign indicator. */
 export function SignedElemImage({ color, sign, width = 72 }: { color: Color; sign: Sign; width?: number }) {
+  const littleAlchemy = useLittleAlchemy();
+  if (littleAlchemy) {
+    // Little Alchemy artwork encodes the sign in the picture itself (e.g. heart = R+, ghost = R−),
+    // so show the matching sign image instead of drawing ＋/－ bars over the orb.
+    const key = `${color}${sign}` as keyof typeof SIGN_SPRITES;
+    return (
+      <span style={{ display: 'inline-block', width, height: width, flexShrink: 0 }}>
+        <AtlasSprite sprite={SIGN_SPRITES[key]} width={width} title={key} />
+      </span>
+    );
+  }
   const barThick = Math.max(3, Math.round(width * 0.13));
   const barLen   = Math.round(width * 0.54);
   const barStyle: React.CSSProperties = {

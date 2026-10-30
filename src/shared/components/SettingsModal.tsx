@@ -211,6 +211,12 @@ export function SettingsModal({
               onChange={v => set({ showPuzzleOnly: v })}
             />
             <ToggleRow
+              label="🧪 Little Alchemy mode"
+              description="Swap the potion, alchemical and aspect artwork for the Little Alchemy style set"
+              value={settings.littleAlchemy}
+              onChange={v => set({ littleAlchemy: v })}
+            />
+            <ToggleRow
               label="⏱ Show solve timer"
               description="Display elapsed time in the toolbar while solving — takes effect on next puzzle load"
               value={settings.showTimer}

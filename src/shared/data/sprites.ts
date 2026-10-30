@@ -1,5 +1,9 @@
 /**
  * Sprite definitions — standalone PNG files under /images/.
+ *
+ * alch_*, potion_<colour>_<sign>, potion_null, sign_* and elem_* also exist under
+ * /images/little/ (same file names) for the "Little Alchemy" setting; AtlasSprite
+ * swaps the folder automatically — see themedSprite() in AtlasSprite.tsx.
  */
 
 export const INGREDIENT_SPRITES = {

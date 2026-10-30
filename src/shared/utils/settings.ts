@@ -11,6 +11,7 @@ export type Settings = {
   showPuzzleOnly: boolean;     // show non-board-game (puzzle-only) collections (default: false)
   penColor: string;            // default pen color for draw tool (default: orange-500)
   showTimer: boolean;          // show solve timer in puzzle toolbar (default: false)
+  littleAlchemy: boolean;      // use the "Little Alchemy" artwork set (default: false)
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -20,6 +21,7 @@ export const DEFAULT_SETTINGS: Settings = {
   showPuzzleOnly: false,
   penColor: DEFAULT_PEN_COLOR,
   showTimer: false,
+  littleAlchemy: false,
 };
 
 const SETTINGS_KEY = 'alch-settings';
@@ -32,6 +34,28 @@ export function loadSettings(): Settings {
   } catch { return { ...DEFAULT_SETTINGS }; }
 }
 
+// ─── Little Alchemy artwork flag (reactive) ──────────────────────────────────
+// Sprites read this through useLittleAlchemy() so every image swaps instantly
+// when the setting is toggled, without threading props through the whole tree.
+
+let littleAlchemyCache: boolean | null = null;
+const settingsListeners = new Set<() => void>();
+
+export function getLittleAlchemy(): boolean {
+  if (littleAlchemyCache === null) littleAlchemyCache = loadSettings().littleAlchemy;
+  return littleAlchemyCache;
+}
+
+export function subscribeSettings(listener: () => void): () => void {
+  settingsListeners.add(listener);
+  return () => { settingsListeners.delete(listener); };
+}
+
 export function saveSettings(s: Settings): void {
   try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); } catch { /* ignore */ }
+  const next = !!s.littleAlchemy;
+  if (next !== littleAlchemyCache) {
+    littleAlchemyCache = next;
+    settingsListeners.forEach(l => l());
+  }
 }
