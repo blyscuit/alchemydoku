@@ -49,12 +49,23 @@ function TutorialProgress({
   current,
   total,
   onBack,
+  onPrev,
+  onNext,
 }: {
   current: number;
   total: number;
   onBack: () => void;
+  onPrev: () => void;
+  onNext: () => void;
 }) {
   const pct = Math.round((current / total) * 100);
+  const canPrev = current > 0;
+  const canNext = current < total - 1;
+  const navBtn =
+    'w-7 h-7 flex items-center justify-center rounded-full text-gray-500 shrink-0 ' +
+    'hover:bg-gray-100 hover:text-gray-800 transition-colors ' +
+    'disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent ' +
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400';
   return (
     <div className="bg-white border-b sticky top-0 z-20">
       <div className="max-w-lg mx-auto px-4 py-2.5 flex items-center gap-3">
@@ -65,6 +76,15 @@ function TutorialProgress({
                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 rounded"
         >
           ← Exit
+        </button>
+        <button
+          onClick={onPrev}
+          disabled={!canPrev}
+          aria-label="Previous step"
+          title="Previous step"
+          className={navBtn}
+        >
+          ‹
         </button>
         <div
           className="flex-1 bg-gray-100 rounded-full h-1.5"
@@ -79,6 +99,15 @@ function TutorialProgress({
             style={{ width: `${pct}%` }}
           />
         </div>
+        <button
+          onClick={onNext}
+          disabled={!canNext}
+          aria-label="Next step"
+          title="Skip to next step"
+          className={navBtn}
+        >
+          ›
+        </button>
         <span className="text-xs text-gray-400 shrink-0 tabular-nums">
           {current + 1}/{total}
         </span>
@@ -135,6 +164,16 @@ export function TutorialPage({
     }
   }
 
+  // Free navigation between steps — unlike handleNext, skipping does not mark
+  // a puzzle as completed and never finishes the tutorial.
+  function handleSkipNext() {
+    setStepIndex(i => Math.min(i + 1, steps.length - 1));
+  }
+
+  function handlePrev() {
+    setStepIndex(i => Math.max(i - 1, 0));
+  }
+
   if (!step) {
     markTutorialDone(tutorialId);
     onDone();
@@ -145,7 +184,13 @@ export function TutorialPage({
 
   return (
     <>
-      <TutorialProgress current={stepIndex} total={steps.length} onBack={onBack} />
+      <TutorialProgress
+        current={stepIndex}
+        total={steps.length}
+        onBack={onBack}
+        onPrev={handlePrev}
+        onNext={handleSkipNext}
+      />
 
       {step.kind === 'explain' && (
         <ExplainCard step={step} onNext={handleNext} isLast={isLastStep} />
@@ -162,7 +207,7 @@ export function TutorialPage({
           </div>
         );
         return (
-          <>
+          <div key={stepIndex}>
             {step.banner && <TutorialBanner text={step.banner} />}
             <PuzzleSolverPage
               puzzle={puzzle}
@@ -170,7 +215,7 @@ export function TutorialPage({
               onNext={handleNext}
               isTutorial
             />
-          </>
+          </div>
         );
       })()}
     </>
