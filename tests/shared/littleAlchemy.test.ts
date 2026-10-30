@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  POTION_SPRITES, ELEM_SPRITES, SIGN_SPRITES, ALCHEMICAL_SPRITES,
+  INGREDIENT_SPRITES, POTION_SPRITES, ELEM_SPRITES, SIGN_SPRITES, ALCHEMICAL_SPRITES,
 } from '@shared/data/sprites';
 import { themedSprite } from '@shared/components/AtlasSprite';
 import { DEFAULT_SETTINGS } from '@shared/utils/settings';
@@ -19,6 +19,7 @@ describe('Little Alchemy artwork', () => {
   });
 
   const themed = [
+    ...Object.values(INGREDIENT_SPRITES),
     ...Object.values(ALCHEMICAL_SPRITES),
     ...Object.values(ELEM_SPRITES),
     ...Object.values(SIGN_SPRITES),

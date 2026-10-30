@@ -19,7 +19,7 @@ function resolveSpriteSrc(sprite: string): string {
 
 // Sprites that have a "Little Alchemy" replacement under /images/little/ (same file names).
 const LITTLE_ALCHEMY_SPRITES =
-  /^\/?images\/(alch_[1-8]|potion_(red|green|blue)_(plus|minus)|potion_null|sign_[RGB]_(plus|minus)|elem_[RGB]_[LS])\.svg$/;
+  /^\/?images\/(i[0-7]|alch_[1-8]|potion_(red|green|blue)_(plus|minus)|potion_null|sign_[RGB]_(plus|minus)|elem_[RGB]_[LS])\.(svg|png)$/;
 
 export function themedSprite(sprite: string, littleAlchemy: boolean): string {
   if (!littleAlchemy || !LITTLE_ALCHEMY_SPRITES.test(sprite)) return sprite;
