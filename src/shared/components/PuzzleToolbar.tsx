@@ -24,6 +24,8 @@ export type PuzzleToolbarProps = {
   onSave: () => void;
   onLoad: () => void;
   onReset: () => void;
+  /** Opens the Settings modal. When omitted the settings button is hidden. */
+  onOpenSettings?: () => void;
   /** Called when the user clicks the chain-link button; should update the URL and copy to clipboard. */
   onPermalink?: () => void;
   onUndo?:  () => void;
@@ -38,7 +40,7 @@ export type PuzzleToolbarProps = {
 export function PuzzleToolbar({
   title, difficulty, worldsLeft,
   isTutorial = false, subtitle,
-  onBack, onSave, onLoad, onReset, onPermalink,
+  onBack, onSave, onLoad, onReset, onOpenSettings, onPermalink,
   onUndo, onRedo, canUndo = false, canRedo = false,
   timerDisplay, timerPaused, onTimerToggle,
 }: PuzzleToolbarProps) {
@@ -105,6 +107,9 @@ export function PuzzleToolbar({
           )}
           <button onClick={onSave}  aria-label="Save progress"  title="Save progress to file"  className={iconBtn}>💾</button>
           <button onClick={onLoad}  aria-label="Load progress"  title="Load progress from file" className={iconBtn}>📂</button>
+          {onOpenSettings && (
+            <button onClick={onOpenSettings} aria-label="Settings" title="Settings" className={iconBtn}>⚙️</button>
+          )}
           {onUndo && (
             <button onClick={onUndo} disabled={!canUndo} aria-label="Undo" title="Undo (Ctrl+Z)"
               className={`${iconBtn} ${!canUndo ? 'opacity-30 cursor-not-allowed' : ''}`}>↩</button>
@@ -140,6 +145,9 @@ export function PuzzleToolbar({
               )}
               <button onClick={() => { onSave();  setMenuOpen(false); }} className={menuItem}>💾 Save progress</button>
               <button onClick={() => { onLoad();  setMenuOpen(false); }} className={menuItem}>📂 Load progress</button>
+              {onOpenSettings && (
+                <button onClick={() => { onOpenSettings(); setMenuOpen(false); }} className={menuItem}>⚙️ Settings</button>
+              )}
               {onUndo && (
                 <button onClick={() => { onUndo(); setMenuOpen(false); }} disabled={!canUndo}
                   className={`${menuItem} ${!canUndo ? 'opacity-30' : ''}`}>↩ Undo</button>

@@ -51,14 +51,12 @@ function TutorialProgress({
   onBack,
   onPrev,
   onNext,
-  onOpenSettings,
 }: {
   current: number;
   total: number;
   onBack: () => void;
   onPrev: () => void;
   onNext: () => void;
-  onOpenSettings?: () => void;
 }) {
   const pct = Math.round((current / total) * 100);
   const canPrev = current > 0;
@@ -113,16 +111,6 @@ function TutorialProgress({
         <span className="text-xs text-gray-400 shrink-0 tabular-nums">
           {current + 1}/{total}
         </span>
-        {onOpenSettings && (
-          <button
-            onClick={onOpenSettings}
-            aria-label="Settings"
-            title="Settings"
-            className={navBtn}
-          >
-            ⚙️
-          </button>
-        )}
       </div>
     </div>
   );
@@ -204,7 +192,6 @@ export function TutorialPage({
         onBack={onBack}
         onPrev={handlePrev}
         onNext={handleSkipNext}
-        onOpenSettings={onOpenSettings}
       />
 
       {step.kind === 'explain' && (
@@ -228,6 +215,7 @@ export function TutorialPage({
               puzzle={puzzle}
               onBack={onBack}
               onNext={handleNext}
+              onOpenSettings={onOpenSettings}
               isTutorial
             />
           </div>

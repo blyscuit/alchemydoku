@@ -440,6 +440,17 @@ function AppInner() {
     clearExpandedProgress();
   }
 
+  const settingsModalEl = settingsOpen ? (
+    <SettingsModal
+      settings={settings}
+      onSettingsChange={handleSettingsChange}
+      onResetBase={handleResetBase}
+      onResetExpanded={handleResetExpanded}
+      onResetAll={handleResetAll}
+      onClose={() => setSettingsOpen(false)}
+    />
+  ) : null;
+
   // ── Tutorial ───────────────────────────────────────────────────────────────
   if (view.kind === 'tutorial') {
     return (
@@ -452,16 +463,7 @@ function AppInner() {
           onPuzzleDone={markDone}
           onOpenSettings={() => setSettingsOpen(true)}
         />
-        {settingsOpen && (
-          <SettingsModal
-            settings={settings}
-            onSettingsChange={handleSettingsChange}
-            onResetBase={handleResetBase}
-            onResetExpanded={handleResetExpanded}
-            onResetAll={handleResetAll}
-            onClose={() => setSettingsOpen(false)}
-          />
-        )}
+        {settingsModalEl}
       </>
     );
   }
@@ -472,17 +474,21 @@ function AppInner() {
     if (!puzzle) return <div className="p-8 text-red-500">Puzzle not found.</div>;
     const nextId = getNextPuzzleId(view.puzzleId, view.colId);
     return (
-      <PuzzleSolverPage
-        key={`${view.puzzleId}-${resetVersion}`}
-        puzzle={puzzle}
-        initialDisplayMap={resetVersion === 0 ? permalinkDisplayMap : undefined}
-        onBack={() => setView({ kind: 'collection', colId: view.colId })}
-        onNext={() => {
-          markDone(view.puzzleId);
-          if (nextId) openPuzzle(nextId, view.colId);
-          else        setView({ kind: 'collection', colId: view.colId });
-        }}
-      />
+      <>
+        <PuzzleSolverPage
+          key={`${view.puzzleId}-${resetVersion}`}
+          puzzle={puzzle}
+          initialDisplayMap={resetVersion === 0 ? permalinkDisplayMap : undefined}
+          onBack={() => setView({ kind: 'collection', colId: view.colId })}
+          onNext={() => {
+            markDone(view.puzzleId);
+            if (nextId) openPuzzle(nextId, view.colId);
+            else        setView({ kind: 'collection', colId: view.colId });
+          }}
+          onOpenSettings={() => setSettingsOpen(true)}
+        />
+        {settingsModalEl}
+      </>
     );
   }
 

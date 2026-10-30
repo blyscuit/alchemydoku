@@ -124,10 +124,12 @@ function SolverInner({
   onBack,
   onNext,
   isTutorial = false,
+  onOpenSettings,
 }: {
   onBack: () => void;
   onNext?: () => void;
   isTutorial?: boolean;
+  onOpenSettings?: () => void;
 }) {
   const { state, dispatch } = useSolver();
   const { puzzle, worlds } = state;
@@ -173,6 +175,7 @@ function SolverInner({
         onSave={handleSave}
         onLoad={handleLoad}
         onReset={() => dispatch({ type: 'RESET' })}
+        onOpenSettings={onOpenSettings}
         onPermalink={() => applyPermalink(puzzle.id, 'base', state.displayMap)}
         onUndo={() => dispatch({ type: 'UNDO' })}
         onRedo={() => dispatch({ type: 'REDO' })}
@@ -244,16 +247,18 @@ export function PuzzleSolverPage({
   onNext,
   isTutorial = false,
   initialDisplayMap,
+  onOpenSettings,
 }: {
   puzzle: Puzzle;
   onBack: () => void;
   onNext?: () => void;
   isTutorial?: boolean;
+  onOpenSettings?: () => void;
   initialDisplayMap?: import('@shared/utils/solverStorage').DisplayMap;
 }) {
   return (
     <SolverProvider key={puzzle.id} puzzle={puzzle} initialDisplayMap={initialDisplayMap}>
-      <SolverInner onBack={onBack} onNext={onNext} isTutorial={isTutorial} />
+      <SolverInner onBack={onBack} onNext={onNext} isTutorial={isTutorial} onOpenSettings={onOpenSettings} />
     </SolverProvider>
   );
 }
