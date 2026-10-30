@@ -147,8 +147,8 @@ function MixSimulatorSection() {
 
 // ─── Inner page ───────────────────────────────────────────────────────────────
 
-function SolverInner({ onBack, onNext, isTutorial = false }: {
-  onBack: () => void; onNext?: () => void; isTutorial?: boolean;
+function SolverInner({ onBack, onNext, isTutorial = false, onOpenSettings }: {
+  onBack: () => void; onNext?: () => void; isTutorial?: boolean; onOpenSettings?: () => void;
 }) {
   const { state, dispatch } = useExpandedSolver();
   const { puzzle, worlds } = state;
@@ -198,6 +198,7 @@ function SolverInner({ onBack, onNext, isTutorial = false }: {
         onSave={handleSave}
         onLoad={handleLoad}
         onReset={() => dispatch({ type: 'RESET' })}
+        onOpenSettings={onOpenSettings}
         onPermalink={() => applyPermalink(puzzle.id, 'expanded', state.displayMap)}
         onUndo={() => dispatch({ type: 'UNDO' })}
         onRedo={() => dispatch({ type: 'REDO' })}
@@ -255,13 +256,14 @@ function SolverInner({ onBack, onNext, isTutorial = false }: {
 
 // ─── Public page component ────────────────────────────────────────────────────
 
-export function ExpandedPuzzleSolverPage({ puzzle, onBack, onNext, isTutorial = false, initialDisplayMap }: {
+export function ExpandedPuzzleSolverPage({ puzzle, onBack, onNext, isTutorial = false, initialDisplayMap, onOpenSettings }: {
   puzzle: ExpandedPuzzle; onBack: () => void; onNext?: () => void; isTutorial?: boolean;
+  onOpenSettings?: () => void;
   initialDisplayMap?: import('@shared/utils/solverStorage').DisplayMap;
 }) {
   return (
     <ExpandedSolverProvider key={puzzle.id} puzzle={puzzle} initialDisplayMap={initialDisplayMap}>
-      <SolverInner onBack={onBack} onNext={onNext} isTutorial={isTutorial} />
+      <SolverInner onBack={onBack} onNext={onNext} isTutorial={isTutorial} onOpenSettings={onOpenSettings} />
     </ExpandedSolverProvider>
   );
 }

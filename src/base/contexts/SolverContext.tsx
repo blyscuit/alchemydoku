@@ -1,4 +1,5 @@
 import { createContext, useContext, useReducer, useEffect, useMemo, type ReactNode } from 'react';
+import { withGridUndoDebounce, stampGridEdits } from '@shared/utils/gridUndo';
 import { generateAllWorlds, applyClues } from '@shared/logic/worldSet';
 import { checkAnswers, checkDebunkAnswers } from '@base/puzzles/schema';
 import { makeDisplayMap, loadDisplayMap, saveDisplayMap, emptyGrid, mergeIntoUnifiedStore } from '@shared/utils/solverStorage';
@@ -88,13 +89,15 @@ export type SolverState = {
   redoStack: UndoSnapshot[];
   timerElapsed: number;
   timerPaused: boolean;
+  /** Time of the last grid edit (0 = none) — used to merge rapid edits into one undo step. */
+  lastGridEditAt?: number;
 };
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
 
 export type Action =
-  | { type: 'TOGGLE_CELL'; ingredient: number; alchemical: number }
-  | { type: 'SET_CELL'; ingredient: number; alchemical: number; state: CellState }
+  | { type: 'TOGGLE_CELL'; ingredient: number; alchemical: number; t?: number }
+  | { type: 'SET_CELL'; ingredient: number; alchemical: number; state: CellState; t?: number }
   | { type: 'SUBMIT_ANSWER'; answers: (PuzzleAnswer | null)[] }
   | { type: 'REQUEST_HINT' }
   | { type: 'NEXT_HINT_STEP' }
@@ -116,7 +119,7 @@ export type Action =
 
 // ─── Reducer ──────────────────────────────────────────────────────────────────
 
-function reducer(state: SolverState, action: Action): SolverState {
+function baseReducer(state: SolverState, action: Action): SolverState {
   switch (action.type) {
     case 'TOGGLE_CELL': {
       const { ingredient, alchemical } = action;
@@ -301,6 +304,10 @@ function reducer(state: SolverState, action: Action): SolverState {
   }
 }
 
+/** Grid edits within 1 s of each other share one undo step (see gridUndo.ts). */
+const GRID_ACTIONS = ['TOGGLE_CELL', 'SET_CELL'] as const;
+const reducer = withGridUndoDebounce(baseReducer, GRID_ACTIONS);
+
 // ─── Context ──────────────────────────────────────────────────────────────────
 
 type SolverContextValue = {
@@ -350,7 +357,8 @@ export function SolverProvider({ puzzle, children, initialDisplayMap }: { puzzle
     timerPaused: false,
   };
 
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [state, rawDispatch] = useReducer(reducer, initialState);
+  const dispatch = useMemo(() => stampGridEdits(rawDispatch, GRID_ACTIONS), []);
 
   useEffect(() => {
     if (!showTimer || state.completed) return;

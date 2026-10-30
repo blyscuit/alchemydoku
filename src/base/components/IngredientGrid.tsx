@@ -251,7 +251,10 @@ export function IngredientGrid({ onRandomize, onLongPressRandomize }: { onRandom
       const active = document.activeElement;
       const inInput = active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement;
       if (inInput) return;
-      if (e.code === 'Space' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && (e.key.toLowerCase() === 'z' || e.key.toLowerCase() === 'y')) {
+        e.preventDefault();
+        dispatch({ type: e.key.toLowerCase() === 'y' || e.shiftKey ? 'REDO' : 'UNDO' });
+      } else if (e.code === 'Space' && !e.ctrlKey && !e.metaKey && !e.altKey) {
         e.preventDefault();
         setActiveTool(cur => TOOL_CYCLE[(TOOL_CYCLE.indexOf(cur) + 1) % TOOL_CYCLE.length]);
         setEditingCell(null);
@@ -487,6 +490,25 @@ export function IngredientGrid({ onRandomize, onLongPressRandomize }: { onRandom
                 ✕ Drawing
               </button>
             )}
+
+            <button
+              onClick={() => dispatch({ type: 'UNDO' })}
+              disabled={state.undoStack.length === 0}
+              title="Undo (U / Ctrl+Z) — edits within 1 s are grouped"
+              aria-label="Undo"
+              className="text-xs text-gray-500 hover:text-indigo-600 border border-gray-200
+                         hover:border-indigo-300 rounded-lg px-2.5 py-1 transition-colors select-none
+                         disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-gray-500 disabled:hover:border-gray-200"
+            >↩</button>
+            <button
+              onClick={() => dispatch({ type: 'REDO' })}
+              disabled={state.redoStack.length === 0}
+              title="Redo (R / Ctrl+Shift+Z)"
+              aria-label="Redo"
+              className="text-xs text-gray-500 hover:text-indigo-600 border border-gray-200
+                         hover:border-indigo-300 rounded-lg px-2.5 py-1 transition-colors select-none
+                         disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-gray-500 disabled:hover:border-gray-200"
+            >↪</button>
 
             {onRandomize && (
               <button

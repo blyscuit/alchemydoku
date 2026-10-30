@@ -17,6 +17,7 @@ import type { ExpandedCollection } from './data/puzzlesIndex';
 import { WhatsNewBanner } from '@shared/components/WhatsNewBanner';
 import { getCurrentReleaseEntry } from '@shared/utils/releaseNotes';
 import { SettingsModal } from '@shared/components/SettingsModal';
+import { useNavHistory } from '@shared/utils/useNavHistory';
 import { clearBaseProgress } from '@shared/utils/saveProgress';
 import { BuildStamp } from '@shared/components/BuildStamp';
 import type { Settings } from '@shared/utils/settings';
@@ -211,6 +212,9 @@ function CollectionView({ collection, completed, showPuzzleOnly, onSelectPuzzle,
 
 // ─── Main ExpandedHome ────────────────────────────────────────────────────────
 
+/** What is on screen in Expanded mode (one browser-history entry). */
+type ExView = { puzzle: ExpandedPuzzle | null; collection: ExpandedCollection | null; queue: ExpandedPuzzle[] };
+
 function computeInitialExpanded(puzzleId?: string): { puzzle: ExpandedPuzzle | null; queue: ExpandedPuzzle[] } {
   if (!puzzleId) return { puzzle: null, queue: [] };
   const puzzle = EXPANDED_PUZZLE_MAP[puzzleId];
@@ -245,9 +249,17 @@ export function ExpandedHome({ onModeChange, initialPuzzleId, initialShuffleHash
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [completed, setCompleted] = useState<Set<string>>(loadCompleted as () => Set<string>);
-  const [activePuzzle, setActivePuzzle] = useState<ExpandedPuzzle | null>(initPuzzle);
-  const [activeCollection, setActiveCollection] = useState<ExpandedCollection | null>(null);
-  const [puzzleQueue, setPuzzleQueue] = useState<ExpandedPuzzle[]>(initQueue);
+  // One navigation entry = what is on screen: a puzzle (with the rest of its collection queued),
+  // a collection page, or the hub.  Back returns to the previous entry; a shared puzzle link
+  // opens with the hub beneath it.
+  const HUB: ExView = { puzzle: null, collection: null, queue: [] };
+  const nav = useNavHistory<ExView>(() => ({
+    current: { puzzle: initPuzzle, collection: null, queue: initQueue },
+    below: initPuzzle ? [HUB] : [],
+  }));
+  const activePuzzle = nav.view.puzzle;
+  const activeCollection = nav.view.collection;
+  const puzzleQueue = nav.view.queue;
   const [resetVersion, setResetVersion] = useState(0);
 
   // Persist completed set
@@ -272,8 +284,7 @@ export function ExpandedHome({ onModeChange, initialPuzzleId, initialShuffleHash
         if (EXPANDED_PUZZLE_MAP[id]) queue.push(EXPANDED_PUZZLE_MAP[id]);
       });
     }
-    setPuzzleQueue(queue);
-    setActivePuzzle(puzzle);
+    nav.navigate({ puzzle, collection: activeCollection, queue });
     try { localStorage.setItem(STORAGE_LAST, puzzle.id); } catch { /**/ }
   };
 
@@ -285,28 +296,43 @@ export function ExpandedHome({ onModeChange, initialPuzzleId, initialShuffleHash
     if (activePuzzle) markCompleted(activePuzzle.id);
     if (puzzleQueue.length > 0) {
       const [next, ...rest] = puzzleQueue;
-      setPuzzleQueue(rest);
-      setActivePuzzle(next);
+      // replace: Back skips puzzles that were already finished
+      nav.replace({ puzzle: next, collection: activeCollection, queue: rest });
     } else {
       if (activePuzzle) markCompleted(activePuzzle.id);
-      setActivePuzzle(null);
-      // stay on collection view if we came from one
+      // back to wherever the puzzle was opened from (collection page or hub)
+      nav.back({ puzzle: null, collection: activeCollection, queue: [] });
     }
   };
+
+  const settingsModalEl = settingsOpen ? (
+    <SettingsModal
+      settings={settings}
+      onSettingsChange={onSettingsChange}
+      onResetBase={() => { clearBaseProgress(); }}
+      onResetExpanded={() => { clearAllExpandedProgress(); setCompleted(new Set()); setResetVersion(v => v + 1); }}
+      onResetAll={() => { clearBaseProgress(); clearAllExpandedProgress(); setCompleted(new Set()); setResetVersion(v => v + 1); }}
+      onClose={() => setSettingsOpen(false)}
+    />
+  ) : null;
 
   // ── Active puzzle view ─────────────────────────────────────────────────────
 
   if (activePuzzle) {
     const isTutorial = activePuzzle.difficulty === 'tutorial';
     return (
+      <>
       <ExpandedPuzzleSolverPage
         key={`${activePuzzle.id}-${resetVersion}`}
         puzzle={activePuzzle}
         initialDisplayMap={resetVersion === 0 ? permalinkDisplayMap : undefined}
-        onBack={() => setActivePuzzle(null)}
+        onBack={() => nav.back({ puzzle: null, collection: activeCollection, queue: [] })}
         onNext={handleNext}
         isTutorial={isTutorial}
+        onOpenSettings={() => setSettingsOpen(true)}
       />
+      {settingsModalEl}
+      </>
     );
   }
 
@@ -319,7 +345,7 @@ export function ExpandedHome({ onModeChange, initialPuzzleId, initialShuffleHash
         completed={completed}
         showPuzzleOnly={settings.showPuzzleOnly}
         onSelectPuzzle={openPuzzle}
-        onBack={() => setActiveCollection(null)}
+        onBack={() => nav.back(HUB)}
       />
     );
   }
@@ -478,7 +504,7 @@ export function ExpandedHome({ onModeChange, initialPuzzleId, initialShuffleHash
                   collection={coll}
                   completed={completed}
                   showPuzzleOnly={settings.showPuzzleOnly}
-                  onOpen={() => setActiveCollection(coll)}
+                  onOpen={() => nav.navigate({ puzzle: null, collection: coll, queue: [] })}
                 />
               ))}
             </div>
@@ -493,16 +519,7 @@ export function ExpandedHome({ onModeChange, initialPuzzleId, initialShuffleHash
         <BuildStamp />
 
         {/* Settings modal */}
-        {settingsOpen && (
-          <SettingsModal
-            settings={settings}
-            onSettingsChange={onSettingsChange}
-            onResetBase={() => { clearBaseProgress(); }}
-            onResetExpanded={() => { clearAllExpandedProgress(); setCompleted(new Set()); setResetVersion(v => v + 1); }}
-            onResetAll={() => { clearBaseProgress(); clearAllExpandedProgress(); setCompleted(new Set()); setResetVersion(v => v + 1); }}
-            onClose={() => setSettingsOpen(false)}
-          />
-        )}
+        {settingsModalEl}
 
       </div>
     </div>

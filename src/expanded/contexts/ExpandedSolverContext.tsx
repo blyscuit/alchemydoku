@@ -14,6 +14,7 @@
 import {
   createContext, useContext, useReducer, useEffect, useMemo, type ReactNode,
 } from 'react';
+import { withGridUndoDebounce, stampGridEdits } from '@shared/utils/gridUndo';
 import { isSolar } from '../logic/solarLunar';
 import { checkExpandedAnswers, computeAllExpandedAnswers, getExpandedPuzzleWorlds } from '../puzzles/schemaExpanded';
 import { validateExpandedMinStepsAnswer, validateExpandedApprenticePlanAnswer, validateExpandedConflictOnlyAnswer } from '../logic/debunkExpanded';
@@ -182,13 +183,15 @@ export type ExpandedSolverState = {
   timerElapsed:    number;
   timerPaused:     boolean;
   redoStack:       ExpandedUndoSnapshot[];
+  /** Time of the last grid edit (0 = none) — used to merge rapid edits into one undo step. */
+  lastGridEditAt?: number;
 };
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
 
 export type ExpandedAction =
-  | { type: 'TOGGLE_CELL';         ingredient: number; alchemical: number }
-  | { type: 'SET_CELL';            ingredient: number; alchemical: number; state: CellState }
+  | { type: 'TOGGLE_CELL';         ingredient: number; alchemical: number; t?: number }
+  | { type: 'SET_CELL';            ingredient: number; alchemical: number; state: CellState; t?: number }
   | { type: 'SUBMIT_ANSWER';       answers: (AnyAnswer | null)[] }
   | { type: 'REQUEST_HINT' }
   | { type: 'NEXT_HINT_STEP' }
@@ -242,7 +245,7 @@ function applyAutoDeduction(state: ExpandedSolverState): ExpandedSolverState {
 
 // ─── Reducer ──────────────────────────────────────────────────────────────────
 
-function reducer(state: ExpandedSolverState, action: ExpandedAction): ExpandedSolverState {
+function baseReducer(state: ExpandedSolverState, action: ExpandedAction): ExpandedSolverState {
   switch (action.type) {
 
     case 'TOGGLE_CELL': {
@@ -491,6 +494,10 @@ function reducer(state: ExpandedSolverState, action: ExpandedAction): ExpandedSo
   }
 }
 
+/** Grid edits within 1 s of each other share one undo step (see gridUndo.ts). */
+const GRID_ACTIONS = ['TOGGLE_CELL', 'SET_CELL'] as const;
+const reducer = withGridUndoDebounce(baseReducer, GRID_ACTIONS);
+
 // ─── Context ──────────────────────────────────────────────────────────────────
 
 type ContextValue = { state: ExpandedSolverState; dispatch: React.Dispatch<ExpandedAction> };
@@ -538,7 +545,8 @@ export function ExpandedSolverProvider({ puzzle, children, initialDisplayMap }: 
     timerPaused:     false,
   });
 
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [state, rawDispatch] = useReducer(reducer, initialState);
+  const dispatch = useMemo(() => stampGridEdits(rawDispatch, GRID_ACTIONS), []);
 
   useEffect(() => {
     if (!showTimer || state.completed) return;

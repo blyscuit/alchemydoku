@@ -16,6 +16,7 @@ import type { Puzzle } from '@shared/types';
 import { clearPuzzleState } from '@base/contexts/SolverContext';
 import { ExpandedHome as ExpandedHomeImpl } from './expanded/ExpandedHome';
 import { parsePermalink, hashToDisplayMap } from '@shared/utils/permalink';
+import { useNavHistory } from '@shared/utils/useNavHistory';
 import { DriveProvider, useDrive } from '@shared/contexts/DriveContext';
 import { DriveSync } from '@shared/components/DriveSync';
 import { shouldShowReleaseNotes, markReleaseNotesSeen, getCurrentReleaseEntry } from '@shared/utils/releaseNotes';
@@ -334,16 +335,25 @@ function AppInner() {
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const [mode, setMode]                 = useState<'base' | 'expanded'>(initMode);
-  const [view, setView]                 = useState<View>(() => {
+  // Navigation history: Back (in-app button or browser/phone gesture) returns to the page you came from.
+  // A shared puzzle link opens with [home, collection] beneath it, so Back walks up the app.
+  const nav = useNavHistory<View>(() => {
     if (permalink?.mode === 'base') {
       const puzzle = PUZZLE_MAP[permalink.puzzleId];
       if (puzzle) {
         const col = (COLLECTIONS as Collection[]).find(c => c.puzzleIds.includes(permalink.puzzleId));
-        if (col) return { kind: 'puzzle', puzzleId: permalink.puzzleId, colId: col.id };
+        if (col) {
+          return {
+            current: { kind: 'puzzle', puzzleId: permalink.puzzleId, colId: col.id },
+            below: [{ kind: 'home' }, { kind: 'collection', colId: col.id }],
+          };
+        }
       }
     }
-    return { kind: 'home' };
-  });
+    return { current: { kind: 'home' } };
+  }, mode === 'base');
+  const view = nav.view;
+  const HOME: View = { kind: 'home' };
   const [completed, setCompleted]       = useState<Set<string>>(() => loadCompleted(initMode));
   const [lastPuzzleId, setLastPuzzleId] = useState<string | null>(() => loadLastPuzzle(initMode));
   /** Incremented on reset to force SolverProvider remount even for same puzzleId */
@@ -378,7 +388,7 @@ function AppInner() {
   function handleModeChange(m: 'base' | 'expanded') {
     saveMode(m);
     setMode(m);
-    setView({ kind: 'home' });
+    nav.reset(HOME);
     setCompleted(loadCompleted(m));
     setLastPuzzleId(loadLastPuzzle(m));
   }
@@ -408,10 +418,11 @@ function AppInner() {
     onPuzzleComplete(); // sync to Drive if signed in
   }
 
-  function openPuzzle(puzzleId: string, colId: string) {
+  function openPuzzle(puzzleId: string, colId: string, replace = false) {
     setLastPuzzleId(puzzleId);
     saveLastPuzzle('base', puzzleId);
-    setView({ kind: 'puzzle', puzzleId, colId });
+    const v: View = { kind: 'puzzle', puzzleId, colId };
+    if (replace) nav.replace(v); else nav.navigate(v);
   }
 
   function getNextPuzzleId(puzzleId: string, colId: string): string | null {
@@ -458,8 +469,8 @@ function AppInner() {
         <TutorialPage
           tutorialId={view.tutorialId}
           steps={TUTORIAL_STEPS[view.tutorialId]}
-          onBack={() => setView({ kind: 'home' })}
-          onDone={() => setView({ kind: 'home' })}
+          onBack={() => nav.back(HOME)}
+          onDone={() => nav.back(HOME)}
           onPuzzleDone={markDone}
           onOpenSettings={() => setSettingsOpen(true)}
         />
@@ -479,11 +490,11 @@ function AppInner() {
           key={`${view.puzzleId}-${resetVersion}`}
           puzzle={puzzle}
           initialDisplayMap={resetVersion === 0 ? permalinkDisplayMap : undefined}
-          onBack={() => setView({ kind: 'collection', colId: view.colId })}
+          onBack={() => nav.back({ kind: 'collection', colId: view.colId })}
           onNext={() => {
             markDone(view.puzzleId);
-            if (nextId) openPuzzle(nextId, view.colId);
-            else        setView({ kind: 'collection', colId: view.colId });
+            if (nextId) openPuzzle(nextId, view.colId, true);   // replace: Back skips already-finished puzzles
+            else        nav.back({ kind: 'collection', colId: view.colId });
           }}
           onOpenSettings={() => setSettingsOpen(true)}
         />
@@ -509,7 +520,7 @@ function AppInner() {
         <div className="max-w-xl mx-auto px-4 py-6 space-y-4">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setView({ kind: 'home' })}
+              onClick={() => nav.back(HOME)}
               className="text-sm text-indigo-600 hover:text-indigo-800 font-semibold transition-colors">
               ← Back
             </button>
@@ -731,9 +742,9 @@ function AppInner() {
                     };
                     const tid = tutorialMap[col.id];
                     if (tid) {
-                      setView({ kind: 'tutorial', tutorialId: tid });
+                      nav.navigate({ kind: 'tutorial', tutorialId: tid });
                     } else {
-                      setView({ kind: 'collection', colId: col.id });
+                      nav.navigate({ kind: 'collection', colId: col.id });
                     }
                   }}
                 />

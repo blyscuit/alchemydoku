@@ -106,7 +106,7 @@ export function applyPermalink(
   const shuffleHash = displayMap ? displayMapToHash(displayMap) : null;
   const url = buildPermalink(puzzleId, mode, shuffleHash);
   const hash = url.slice(url.indexOf('#'));
-  history.replaceState(null, '', hash);
+  history.replaceState(history.state, '', hash);
   navigator.clipboard.writeText(url).catch(() => {/* silent — user can copy from address bar */});
   return url;
 }
