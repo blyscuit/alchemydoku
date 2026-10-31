@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { TheoryBoardSection } from '@shared/components/TheoryBoard';
 import { SolverProvider, useSolver } from '@base/contexts/SolverContext';
 import { CluePanel } from '@base/components/CluePanel';
 import { IngredientGrid } from '@base/components/IngredientGrid';
@@ -114,6 +115,11 @@ function IngredientGridSection() {
           onClose={() => setPickerOpen(false)}
         />
       )}
+      <TheoryBoardSection
+        gridState={state.gridState}
+        displayMap={state.displayMap}
+        onSetCell={(ingredient, alchemical, cell) => dispatch({ type: 'SET_CELL', ingredient, alchemical, state: cell })}
+      />
     </div>
   );
 }

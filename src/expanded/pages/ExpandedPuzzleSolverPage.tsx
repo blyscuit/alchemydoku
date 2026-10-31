@@ -7,6 +7,7 @@
  */
 
 import { useState, useRef, useMemo } from 'react';
+import { TheoryBoardSection } from '@shared/components/TheoryBoard';
 import { ExpandedSolverProvider, useExpandedSolver } from '../contexts/ExpandedSolverContext';
 import { ExpandedCluePanel } from '../components/ExpandedCluePanel';
 import { ExpandedIngredientGrid, GolemPanel } from '../components/ExpandedIngredientGrid';
@@ -116,6 +117,11 @@ function IngredientGridSection() {
           onClose={() => setPickerOpen(false)}
         />
       )}
+      <TheoryBoardSection
+        gridState={state.gridState}
+        displayMap={state.displayMap}
+        onSetCell={(ingredient, alchemical, cell) => dispatch({ type: 'SET_CELL', ingredient, alchemical, state: cell })}
+      />
     </div>
   );
 }
