@@ -18,6 +18,7 @@ import { WhatsNewBanner } from '@shared/components/WhatsNewBanner';
 import { getCurrentReleaseEntry } from '@shared/utils/releaseNotes';
 import { SettingsModal } from '@shared/components/SettingsModal';
 import { useNavHistory } from '@shared/utils/useNavHistory';
+import { useLittleAlchemy } from '@shared/utils/useLittleAlchemy';
 import { clearBaseProgress } from '@shared/utils/saveProgress';
 import { BuildStamp } from '@shared/components/BuildStamp';
 import type { Settings } from '@shared/utils/settings';
@@ -257,6 +258,7 @@ export function ExpandedHome({ onModeChange, initialPuzzleId, initialShuffleHash
     current: { puzzle: initPuzzle, collection: null, queue: initQueue },
     below: initPuzzle ? [HUB] : [],
   }));
+  const little = useLittleAlchemy();   // puzzle state caches worlds from the active mixing rule → remount on change
   const activePuzzle = nav.view.puzzle;
   const activeCollection = nav.view.collection;
   const puzzleQueue = nav.view.queue;
@@ -323,7 +325,7 @@ export function ExpandedHome({ onModeChange, initialPuzzleId, initialShuffleHash
     return (
       <>
       <ExpandedPuzzleSolverPage
-        key={`${activePuzzle.id}-${resetVersion}`}
+        key={`${activePuzzle.id}-${resetVersion}-${little ? 'L' : 'S'}`}
         puzzle={activePuzzle}
         initialDisplayMap={resetVersion === 0 ? permalinkDisplayMap : undefined}
         onBack={() => nav.back({ puzzle: null, collection: activeCollection, queue: [] })}

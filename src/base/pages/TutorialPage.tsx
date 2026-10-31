@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLittleAlchemy } from '@shared/utils/useLittleAlchemy';
 import { useTutorial, type TutorialId } from '@shared/contexts/TutorialContext';
 import { PuzzleSolverPage } from '@base/pages/PuzzleSolverPage';
 import { PUZZLE_MAP } from '@base/data/index';
@@ -149,6 +150,7 @@ export function TutorialPage({
   const { markTutorialDone } = useTutorial();
   // Step index is local state — context only tracks completion, not current step
   const [stepIndex, setStepIndex] = useState(0);
+  const little = useLittleAlchemy();   // remount puzzle steps when the mixing rule changes
 
   const step = steps[stepIndex];
 
@@ -209,7 +211,7 @@ export function TutorialPage({
           </div>
         );
         return (
-          <div key={stepIndex}>
+          <div key={`${stepIndex}-${little ? 'L' : 'S'}`}>
             {step.banner && <TutorialBanner text={step.banner} />}
             <PuzzleSolverPage
               puzzle={puzzle}

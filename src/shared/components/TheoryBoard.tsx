@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { mix } from '@shared/logic/mixer';
-import { LITTLE_BOARD_ORDER, littleMix } from '@shared/logic/littleAlchemyRule';
+import { LITTLE_BOARD_ORDER } from '@shared/logic/littleAlchemyRule';
 import { useLittleAlchemy } from '@shared/utils/useLittleAlchemy';
 import { AlchemicalImage, IngredientIcon, PotionImage } from '@shared/components/GameSprites';
 import type { GridState, DisplayMap } from '@shared/utils/solverStorage';
@@ -26,7 +26,7 @@ function iconIndex(displayMap: DisplayMap, slot: number) {
  * confirmed (✔) for each alchemical in the Ingredient Grid, rows above = the potion made
  * by mixing the two alchemicals underneath (all 28 pairs).
  *
- * Standard mode uses the game rule (mixer.ts); Little Alchemy mode uses the table read
+ * mix() follows the active rule: the game rule, or — in Little Alchemy mode — the table read
  * from the board picture (littleAlchemyRule.ts).
  */
 export function TheoryBoard({ gridState, displayMap, onSetCell }: Props) {
@@ -47,7 +47,7 @@ export function TheoryBoard({ gridState, displayMap, onSetCell }: Props) {
   }, []);
 
   const order = LITTLE_BOARD_ORDER;
-  const rule = little ? littleMix : mix;
+  const rule = mix;   // follows the active rule (re-evaluated on every render; `little` subscribes us to changes)
   const pitch = width / 8;
 
   /** Ingredient slot currently ✔-confirmed for an alchemical (null if none). */

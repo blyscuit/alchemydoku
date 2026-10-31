@@ -17,6 +17,7 @@ import { clearPuzzleState } from '@base/contexts/SolverContext';
 import { ExpandedHome as ExpandedHomeImpl } from './expanded/ExpandedHome';
 import { parsePermalink, hashToDisplayMap } from '@shared/utils/permalink';
 import { useNavHistory } from '@shared/utils/useNavHistory';
+import { useLittleAlchemy } from '@shared/utils/useLittleAlchemy';
 import { DriveProvider, useDrive } from '@shared/contexts/DriveContext';
 import { DriveSync } from '@shared/components/DriveSync';
 import { shouldShowReleaseNotes, markReleaseNotesSeen, getCurrentReleaseEntry } from '@shared/utils/releaseNotes';
@@ -353,6 +354,8 @@ function AppInner() {
     return { current: { kind: 'home' } };
   }, mode === 'base');
   const view = nav.view;
+  // Puzzle state caches worlds computed with the active mixing rule, so pages remount when it changes.
+  const little = useLittleAlchemy();
   const HOME: View = { kind: 'home' };
   const [completed, setCompleted]       = useState<Set<string>>(() => loadCompleted(initMode));
   const [lastPuzzleId, setLastPuzzleId] = useState<string | null>(() => loadLastPuzzle(initMode));
@@ -487,7 +490,7 @@ function AppInner() {
     return (
       <>
         <PuzzleSolverPage
-          key={`${view.puzzleId}-${resetVersion}`}
+          key={`${view.puzzleId}-${resetVersion}-${little ? 'L' : 'S'}`}
           puzzle={puzzle}
           initialDisplayMap={resetVersion === 0 ? permalinkDisplayMap : undefined}
           onBack={() => nav.back({ kind: 'collection', colId: view.colId })}

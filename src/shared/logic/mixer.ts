@@ -1,11 +1,21 @@
 import { ALCHEMICALS } from '@shared/data/alchemicals';
 import { isDirectOpposite } from '@shared/logic/alchemicals';
+import { littleMix } from '@shared/logic/littleAlchemyRule';
+import { getLittleAlchemy } from '@shared/utils/settings';
 import type { AlchemicalId, IngredientId, Assignment, PotionResult, Color } from '@shared/types';
 
 const COLORS: Color[] = ['R', 'G', 'B'];
 
 /**
- * Mix two alchemicals together and return the potion result.
+ * Mix two alchemicals using the rule that is currently active: the standard game rule, or the
+ * Little Alchemists table when Little Alchemy mode is on (see littleAlchemyRule.ts).
+ */
+export function mix(a: AlchemicalId, b: AlchemicalId): PotionResult {
+  return getLittleAlchemy() ? littleMix(a, b) : standardMix(a, b);
+}
+
+/**
+ * The standard game rule, regardless of settings.
  *
  * Algorithm (from 00-game-rules.md §3.2):
  *   1. If all sign-bits are opposite → Neutral
@@ -13,7 +23,7 @@ const COLORS: Color[] = ['R', 'G', 'B'];
  *
  * This function is pure and has no side effects.
  */
-export function mix(a: AlchemicalId, b: AlchemicalId): PotionResult {
+export function standardMix(a: AlchemicalId, b: AlchemicalId): PotionResult {
   if (isDirectOpposite(a, b)) {
     return { type: 'neutral' };
   }

@@ -212,7 +212,7 @@ export function SettingsModal({
             />
             <ToggleRow
               label="🧪 Little Alchemy mode"
-              description="Swap the potion, alchemical and aspect artwork for the Little Alchemy style set"
+              description="Little Alchemy artwork and its own mixing table everywhere. Puzzles were written for the standard rule, so many become unsolvable"
               value={settings.littleAlchemy}
               onChange={v => set({ littleAlchemy: v })}
             />

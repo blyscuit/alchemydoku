@@ -23,6 +23,8 @@
  */
 
 import { ALCHEMICALS } from '@shared/data/alchemicals';
+import { littleMix } from '@shared/logic/littleAlchemyRule';
+import { getLittleAlchemy, subscribeSettings } from '@shared/utils/settings';
 import type { AlchemicalId, IngredientId, Assignment, Color, PotionResult } from '@shared/types';
 
 // ─── Color index ──────────────────────────────────────────────────────────────
@@ -46,27 +48,54 @@ for (let a = 1; a <= 8; a++) {
 
 export const MIX_TABLE = new Uint8Array(64); // [a0 * 8 + b0] → result code 0–6
 
-for (let a0 = 0; a0 < 8; a0++) {
-  for (let b0 = 0; b0 < 8; b0++) {
-    const isOpp =
-      SIGN_TABLE[a0 * 3]     !== SIGN_TABLE[b0 * 3]     &&
-      SIGN_TABLE[a0 * 3 + 1] !== SIGN_TABLE[b0 * 3 + 1] &&
-      SIGN_TABLE[a0 * 3 + 2] !== SIGN_TABLE[b0 * 3 + 2];
-
-    if (isOpp) {
-      MIX_TABLE[a0 * 8 + b0] = 0; // neutral
-    } else {
-      for (let ci = 0; ci < 3; ci++) {
-        if (SIGN_TABLE[a0 * 3 + ci] === SIGN_TABLE[b0 * 3 + ci] &&
-            SIZE_TABLE[a0 * 3 + ci] !== SIZE_TABLE[b0 * 3 + ci]) {
-          // code: R+=1,R-=2, G+=3,G-=4, B+=5,B-=6
-          MIX_TABLE[a0 * 8 + b0] = ci * 2 + (SIGN_TABLE[a0 * 3 + ci] === 1 ? 1 : 2);
-          break;
+/**
+ * (Re)fill MIX_TABLE with the active rule.  Every solver / deducer / debunk routine reads this
+ * one shared array at call time, so switching it switches the whole game.
+ *   little = false → standard rule (same sign, different size)
+ *   little = true  → Little Alchemists table (littleAlchemyRule.ts)
+ * Anything that caches results derived from it (e.g. a puzzle's remaining worlds) must be
+ * recomputed afterwards — the solver pages remount when the setting changes.
+ */
+export function setMixRule(little: boolean): void {
+  for (let a0 = 0; a0 < 8; a0++) {
+    for (let b0 = 0; b0 < 8; b0++) {
+      if (a0 === b0) { MIX_TABLE[a0 * 8 + b0] = 0; continue; }
+      if (little) {
+        MIX_TABLE[a0 * 8 + b0] = encodeResult(littleMix((a0 + 1) as AlchemicalId, (b0 + 1) as AlchemicalId));
+        continue;
+      }
+      const isOpp =
+        SIGN_TABLE[a0 * 3]     !== SIGN_TABLE[b0 * 3]     &&
+        SIGN_TABLE[a0 * 3 + 1] !== SIGN_TABLE[b0 * 3 + 1] &&
+        SIGN_TABLE[a0 * 3 + 2] !== SIGN_TABLE[b0 * 3 + 2];
+      let code = 0; // neutral
+      if (!isOpp) {
+        for (let ci = 0; ci < 3; ci++) {
+          if (SIGN_TABLE[a0 * 3 + ci] === SIGN_TABLE[b0 * 3 + ci] &&
+              SIZE_TABLE[a0 * 3 + ci] !== SIZE_TABLE[b0 * 3 + ci]) {
+            // code: R+=1,R-=2, G+=3,G-=4, B+=5,B-=6
+            code = ci * 2 + (SIGN_TABLE[a0 * 3 + ci] === 1 ? 1 : 2);
+            break;
+          }
         }
       }
+      MIX_TABLE[a0 * 8 + b0] = code;
     }
   }
 }
+
+function encodeResult(r: PotionResult): number {
+  if (r.type === 'neutral') return 0;
+  return COLOR_INDEX[r.color] * 2 + (r.sign === '+' ? 1 : 2);
+}
+
+setMixRule(getLittleAlchemy());
+// Follow the setting.  Registered at import time, so it runs before any React subscriber.
+let _little = getLittleAlchemy();
+subscribeSettings(() => {
+  const next = getLittleAlchemy();
+  if (next !== _little) { _little = next; setMixRule(next); }
+});
 
 /** Decode a mix result code into a PotionResult object. */
 export const MIX_RESULTS: PotionResult[] = [

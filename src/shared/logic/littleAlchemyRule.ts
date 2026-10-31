@@ -1,11 +1,10 @@
-import { mix } from '@shared/logic/mixer';
 import type { AlchemicalId, PotionResult } from '@shared/types';
 
 /**
  * "Little Alchemists" mixing table — read from the printed theory-board pyramid.
  *
- * It is used ONLY by the Theory Board while Little Alchemy mode is on; puzzles, clues
- * and answer checking always use the standard rule in mixer.ts.
+ * While Little Alchemy mode is on this table replaces the standard rule everywhere:
+ * mixer.ts mix() and the solver's MIX_TABLE (worldPack.ts setMixRule) both read it.
  *
  * Icon ↔ aspect mapping used to read the board:
  *   🩷 R+  👻 R−  |  🍀 G+  🔥 G−  |  ⭐ B+  🪽 B−  |  🫙 neutral
@@ -44,5 +43,7 @@ ROWS.forEach((row, ki) => {
 
 /** Potion produced by mixing two alchemicals under the Little Alchemists table. */
 export function littleMix(a: AlchemicalId, b: AlchemicalId): PotionResult {
-  return TABLE.get(pairKey(a, b)) ?? mix(a, b);
+  const r = TABLE.get(pairKey(a, b));
+  if (!r) throw new Error(`No Little Alchemists result for alchemicals ${a} and ${b}`);
+  return r;
 }
